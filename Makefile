@@ -1,11 +1,12 @@
 CFLAGS=-std=c17 -g -static
 
-9cc: 9cc.c
+mycompiler:
+	gcc -g -static -o compiler MyCompiler.c
 
-test: 9cc
+test: compiler
 		./test.sh
 
 clean:
-		rm -f 9cc *.o *~ tmp*
+		rm -f compiler *.o *~ tmp*
 
 .PHONY: test clean
