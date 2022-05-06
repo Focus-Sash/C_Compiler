@@ -17,6 +17,8 @@ void expect(char *op);
 
 int expect_number();
 
+int is_alnum(char c);
+
 bool at_eof();
 
 //変数は単方向連結リストで表す
@@ -38,6 +40,7 @@ typedef enum {
     TK_RESERVED,
     TK_IDENT,
     TK_NUM,
+    TK_RETURN,
     TK_EOF,
 } TokenKind;
 
@@ -53,6 +56,7 @@ struct Token {
 };
 
 Token *consume_ident();
+bool consume_return();
 
 
 //このグローバル変数に、入力をトークナイズした列を格納する
@@ -77,6 +81,7 @@ typedef enum {
     ND_LE,
     ND_LVAR, // ローカル変数
     ND_ASSIGN, // =
+    ND_RETURN,
     ND_NUM,
 } NodeKind;
 
