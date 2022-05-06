@@ -92,7 +92,7 @@ Token *tokenize(char *p) {
             continue;
         }
 
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/') {
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
             cur = new_token(TK_RESERVED, cur, p++);
             continue;
         }
@@ -225,13 +225,18 @@ int main(int argc, char *argv[]) {
 
     user_input = argv[1];
 
+
     token = tokenize(argv[1]);
+
+
     Node *node = expr();
 
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
+
+
 
     gen(node);
 
