@@ -8,9 +8,9 @@ int main(int argc, char *argv[]) {
 
     char *user_input = argv[1];
 
-
     //グローバル変数tokenに、入力された文字列の最初の文字へのポインタを与える
     token = tokenize(argv[1]);
+
     // codeにNodeの列を保存する
     program();
 
