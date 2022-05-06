@@ -16,6 +16,7 @@ bool at_eof();
 
 typedef enum {
     TK_RESERVED,
+    TK_IDENT,
     TK_NUM,
     TK_EOF,
 } TokenKind;
@@ -30,6 +31,9 @@ struct Token {
     int len;
     //EOFの場合は0
 };
+
+Token *consume_ident();
+
 
 //このグローバル変数に、入力をトークナイズした列を格納する
 Token *token;
@@ -47,6 +51,8 @@ typedef enum {
     ND_NE,
     ND_LT,
     ND_LE,
+    ND_LVAR, // ローカル変数
+    ND_ASSIGN, // =
     ND_NUM,
 } NodeKind;
 
@@ -58,12 +64,16 @@ struct Node {
     Node *lhs;
     Node *rhs;
     int val;
+    int offset; // kindがND_LVARの場合のみ　ベースポインタからのオフセット
 };
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
-Node *expr();
 
+void program();
+Node *stmt();
+Node *expr();
+Node *assign();
 Node *equality();
 Node *relation();
 Node *add();
@@ -71,12 +81,6 @@ Node *mul();
 Node *unary();
 Node *primary();
 
-Node *expr();
-Node *equality();
-Node *relation();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
-
+void gen_lval(Node *node);
 void gen(Node *node);
+Node *code[100];

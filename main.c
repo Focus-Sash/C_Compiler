@@ -8,20 +8,30 @@ int main(int argc, char *argv[]) {
 
     char *user_input = argv[1];
 
+
     //グローバル変数tokenに、入力された文字列の最初の文字へのポインタを与える
     token = tokenize(argv[1]);
+    // codeにNodeの列を保存する
+    program();
 
-    //全体がexprであるという前提のもと、構文木の根となるノードへのポインタをnodeに与える
-    Node *node = expr();
-
+    //アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
 
-    //nodeを根とする構文木を構築し、その値を計算するアセンブラを出力する
-    gen(node);
+    //プロローグ
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, 208\n");
 
-    printf("  pop rax\n");
+    for (int i = 0; code[i]; i++) {
+        gen(code[i]);
+        printf("  pop rax\n");
+    }
+
+    // エピローグ
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
     printf("  ret\n");
     return 0;
 }

@@ -1,120 +1,36 @@
 #include "compiler.h"
 
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = kind;
-    node->lhs = lhs;
-    node->rhs = rhs;
-    return node;
-}
-
-Node *new_node_num(int val) {
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_NUM;
-    node->val = val;
-    return node;
-}
 
 
-//次のEBNFで表されるトークン列をパースする
-// expr     = equality
-// equality = relation("==" relation | "!=" relation)*
-// relation = add ("<" add | "<=" add | ">" add | ">=" add)*
-// add      = mul ("+" mul | "-" mul)*
-// mul      = unary( "*" unary | "/" unary)*
-// unary    = ( "+" | "-" )? primary
-// primary  = num | "(" expr ")"
-
-
-
-//それぞれ、対応する種類のノードを根とする木を構築し、根へのポインタを返す
-Node *expr() {
-    return equality();
-}
-
-Node *equality() {
-    Node *node = relation();
-    for (;;) {
-        if (consume("==")) {
-            node = new_node(ND_EQ, node, relation());
-        } else if (consume("!=")) {
-            node = new_node(ND_NE, node, relation());
-        } else {
-            return node;
-        }
-    }
-}
-
-Node *relation() {
-    Node *node = add();
-    for (;;) {
-        if (consume("<")) {
-            node = new_node(ND_LT, node, add());
-        } else if (consume("<=")) {
-            node = new_node(ND_LE, node, add());
-        } else if (consume(">")) {
-            node = new_node(ND_LT, add(), node);
-        } else if (consume(">=")) {
-            node = new_node(ND_LE, add(), node);
-        } else {
-            return node;
-        }
-    }
-}
-
-Node *add() {
-    Node *node = mul();
-    for (;;) {
-        if (consume("+")) {
-            node = new_node(ND_ADD, node, mul());
-        } else if (consume("-")) {
-            node = new_node(ND_SUB, node, mul());
-        } else {
-            return node;
-        }
-    }
-}
-
-
-Node *mul() {
-    Node *node = unary();
-    for (;;) {
-        if (consume("*")) {
-            node = new_node(ND_MUL, node, unary());
-        } else if (consume("/")) {
-            node = new_node(ND_DIV, node, unary());
-        } else {
-            return node;
-        }
-    }
-}
-
-Node *unary() {
-    if (consume("+")) {
-        return primary();
-    } else if (consume("-")) {
-        return new_node(ND_SUB, new_node_num(0), primary());
-    } else {
-        return primary();
-    }
-}
-
-Node *primary() {
-    if (consume("(")) {
-        Node *node = expr();
-        expect(")");
-        return node;
-    }
-
-    return new_node_num(expect_number());
-}
-
-
+//ノードを右辺値として評価する
 //tokenを読みながら構文木を構築し、nodeの左右の子の値をスタックにpushし、nodeを根とする部分木の値を計算し、raxに格納するアセンブラを出力する
 void gen(Node *node) {
-    if (node->kind == ND_NUM) {
-        printf("  push %d\n", node->val);
-        return;
+    switch (node->kind) {
+        case ND_NUM:
+            printf("  push %d\n", node->val);
+            return;
+        case ND_LVAR:
+            gen_lval(node);
+            //この時点でスタックトップには変数のアドレスが入っている
+            printf("  pop rax\n");
+            //下の命令は「raxの値をアドレスとみなしてそこから値をロードしraxに保存する」
+            printf("  mov rax, [rax]\n");
+            printf("  push rax\n");
+            return;
+        case ND_ASSIGN:
+            //ノードの左の子(変数名)を左辺値として評価する
+            //スタックトップにはraxの値(変数のアドレス)が入る
+            gen_lval(node->lhs);
+            //右の子を右辺値として評価する
+            //スタックトップにはraxの値(評価後の値)が入る
+            gen(node->rhs);
+
+            printf("  pop rdi\n");
+            printf("  pop rax\n");
+            //raxに格納されているアドレスにrdiの値を代入する(raxには代入しない)
+            printf("  mov [rax], rdi\n");
+            printf("  push rdi\n");
+            return;
     }
 
     gen(node->lhs);
@@ -170,5 +86,19 @@ void gen(Node *node) {
             break;
     }
 
+    printf("  push rax\n");
+}
+
+//ノードを左辺値として評価する
+void gen_lval(Node *node) {
+    if(node->kind != ND_LVAR){
+        error("代入の左辺値が変数ではありません");
+    }
+
+    //ベースアドレスの番地をraxに代入
+    printf("  mov rax, rbp\n");
+    //オフセットの分だけraxの値を減らす(そのアドレスに変数が割り当てられる)
+    printf("  sub rax, %d\n", node->offset);
+    //スタックにraxに書いてあるアドレスを代入する
     printf("  push rax\n");
 }
