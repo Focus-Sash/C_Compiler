@@ -41,5 +41,6 @@ assert 1 "10 <= 11;"
 assert 1 "a=3;a==3;"
 assert 0 "a=3;a!=3;"
 assert 3 "a=3;a;"
+assert 3 "ab=3;ab;"
 
 echo OK

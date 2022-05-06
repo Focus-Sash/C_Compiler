@@ -113,8 +113,13 @@ Token *tokenize(char *p) {
 
         //変数を表すトークン
         if ('a' <= *p && *p <= 'z') {
-            cur = new_token(TK_IDENT, cur, p++, 1);
-            cur->len = 1;
+            int len = 0;
+            char *tmp = p;
+            while('a' <= *p && *p <= 'z'){
+                len++;
+                p++;
+            }
+            cur = new_token(TK_IDENT, cur, tmp, len);
             continue;
         }
 
