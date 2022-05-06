@@ -18,8 +18,10 @@ struct Token {
     Token *next;
     int val;
     char *str;
+    int len;
 };
 
+//このグローバル変数に、入力をトークナイズした列を格納する
 Token *token;
 
 void error(char *fmt, ...) {
@@ -45,6 +47,8 @@ void error_at(char *loc, char *fmt, ...) {
     exit(1);
 }
 
+
+//特定の文字列が先頭に来ているとき、それを読んでポインタを進める
 bool consume(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op) {
         return false;
@@ -53,6 +57,7 @@ bool consume(char op) {
     return true;
 }
 
+//特定の文字列が先頭に来ているかチェックする
 void expect(char op) {
     if (token->kind != TK_RESERVED || token->str[0] != op) {
         error_at(token->str, "'%c'ではありません", op);
@@ -60,6 +65,7 @@ void expect(char op) {
     token = token->next;
 }
 
+//数字が先頭に来ているかチェックする
 int expect_number() {
     if (token->kind != TK_NUM) {
         error_at(token->str, "数ではありません");
@@ -81,6 +87,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str) {
     return tok;
 }
 
+//入力をトークンの列に変換する
 Token *tokenize(char *p) {
     Token head;
     head.next = NULL;
@@ -120,6 +127,7 @@ typedef enum {
 
 typedef struct Node Node;
 
+//構文木のノードを表す構造体
 struct Node {
     NodeKind kind;
     Node *lhs;
@@ -142,12 +150,19 @@ Node *new_node_num(int val) {
     return node;
 }
 
-Node *mul();
 
+//次のEBNFで表されるトークン列をパースする
+// expr    = mul( "+" mul | "-" mul)*
+// mul     = unary( "*" unary | "/" unary)*
+// unary   = ( "+" | "-" )? primary
+// primary = num | "(" expr ")"
+
+Node *expr();
+Node *mul();
+Node *unary();
 Node *primary();
 
-Node *unary();
-
+//それぞれ、対応する種類の部分木を構築し、根へのポインタを返す
 Node *expr() {
     Node *node = mul();
     for (;;) {
@@ -194,6 +209,8 @@ Node *primary() {
     return new_node_num(expect_number());
 }
 
+
+//tokenを読みながら構文木を構築し、全体の値を計算するアセンブラを出力する
 void gen(Node *node) {
     if (node->kind == ND_NUM) {
         printf("  push %d\n", node->val);
@@ -237,19 +254,17 @@ int main(int argc, char *argv[]) {
 
     user_input = argv[1];
 
-
+    //グローバル変数tokenに、入力された文字列の最初の文字へのポインタを与える
     token = tokenize(argv[1]);
 
-
+    //全体がexpressionであるという前提のもと、構文木の根となるノードへのポインタをnodeに与える
     Node *node = expr();
-
 
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
 
-
-
+    //nodeを根とする構文木を構築し、その値を計算するアセンブラを出力する
     gen(node);
 
     printf("  pop rax\n");
