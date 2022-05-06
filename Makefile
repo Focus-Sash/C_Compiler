@@ -1,7 +1,11 @@
-CFLAGS=-std=c17 -g -static
+CFLAGS=-std=c11 -g -static
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS: .c=.o)
 
 mycompiler:
-	gcc -g -static -o compiler MyCompiler.c
+	gcc -o compiler $(OBJS) $(CFLAGS)
+
+$(OBJS): compiler.h
 
 test: compiler
 		./test.sh
