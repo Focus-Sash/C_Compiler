@@ -61,6 +61,14 @@ bool consume_return() {
     return true;
 }
 
+bool consume_if() {
+    if(token->kind != TK_IF) {
+        return false;
+    }
+    token = token->next;
+    return true;
+}
+
 LVar *find_lvar(Token *tok) {
     for (LVar *var = locals; var; var = var->next) {
         if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
@@ -141,6 +149,12 @@ Token *tokenize(char *p) {
             continue;
         }
 
+        if(strncmp(p, "if", 2) == 0 && !is_alnum(p[2])) {
+            cur = new_token(TK_IF, cur, p, 2);
+            p += 2;
+            continue;
+        }
+
         //変数を表すトークン
         if (('a' <= *p && *p <= 'z') ||
             ('A' <= *p && *p <= 'Z') ||
@@ -170,5 +184,6 @@ Token *tokenize(char *p) {
     }
 
     new_token(TK_EOF, cur, p, 0);
+
     return head.next;
 }

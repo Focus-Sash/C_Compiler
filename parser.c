@@ -19,7 +19,7 @@ Node *new_node_num(int val) {
 
 //次のEBNFで表されるトークン列をパースする
 //program    = stmt*
-//stmt       = expr ";" | "return" expr ";"
+//stmt       = expr ";" | "if" "(" expr ")" stmt | "return" expr ";"
 //expr       = assign
 //assign     = equality ("=" assign)?
 //equality   = relation ("==" relation | "!=" relation)*
@@ -45,19 +45,33 @@ void program() {
 //それぞれ、対応する種類のノードを根とする木を構築し、根へのポインタを返す
 Node *stmt() {
     Node *node;
-    if(consume_return()) {
+    if (consume_return()) {
         node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
+        if (at_eof()) {
+            fprintf(stderr, "expected \"%c\"", ';');
+            exit(1);
+        }
+        //;は区切りの意味しかないので、expectで進める
+        expect(";");
+    } else if (consume_if()) {
+        node = calloc(1, sizeof(Node));
+        node->kind = ND_IF;
+        expect("(");
+        node->lhs = expr();
+        expect(")");
+        node->rhs = stmt();
     } else {
         node = expr();
+        if (at_eof()) {
+            fprintf(stderr, "expected \"%c\"", ';');
+            exit(1);
+        }
+        //;は区切りの意味しかないので、expectで進める
+        expect(";");
     }
-    if(at_eof()){
-        fprintf(stderr, "expected \"%c\"", ';');
-        exit(1);
-    }
-    //;は区切りの意味しかないので、expectで進めるだけにしておく
-    expect(";");
+
     return node;
 }
 

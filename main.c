@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
     // codeにNodeの列を保存する
     program();
 
+
     //アセンブリの前半部分
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");

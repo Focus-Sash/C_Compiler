@@ -5,6 +5,7 @@
 //ノードを右辺値として評価する
 //tokenを読みながら構文木を構築し、nodeの左右の子の値をスタックにpushし、nodeを根とする部分木の値を計算し、raxに格納するアセンブラを出力する
 void gen(Node *node) {
+
     switch (node->kind) {
         case ND_NUM:
             printf("  push %d\n", node->val);
@@ -37,6 +38,15 @@ void gen(Node *node) {
             printf("  mov rsp, rbp\n");
             printf("  pop rbp\n");
             printf("  ret\n");
+            return;
+        case ND_IF:
+            gen(node->lhs);
+            printf("  pop rax\n");
+            printf("  cmp rax, 0\n");
+            printf("  je  .Lend%d\n", counter);
+            gen(node->rhs);
+            printf(".Lend%d:\n", counter);
+            counter++;
             return;
     }
 

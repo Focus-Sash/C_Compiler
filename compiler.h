@@ -41,6 +41,7 @@ typedef enum {
     TK_IDENT,
     TK_NUM,
     TK_RETURN,
+    TK_IF,
     TK_EOF,
 } TokenKind;
 
@@ -57,6 +58,7 @@ struct Token {
 
 Token *consume_ident();
 bool consume_return();
+bool consume_if();
 
 
 //このグローバル変数に、入力をトークナイズした列を格納する
@@ -82,6 +84,7 @@ typedef enum {
     ND_LVAR, // ローカル変数
     ND_ASSIGN, // =
     ND_RETURN,
+    ND_IF,
     ND_NUM,
 } NodeKind;
 
@@ -125,3 +128,5 @@ void gen_lval(Node *node);
 void gen(Node *node);
 
 Node *code[100];
+
+int counter;
