@@ -69,6 +69,14 @@ bool consume_if() {
     return true;
 }
 
+bool consume_else() {
+    if(token->kind != TK_ELSE) {
+        return false;
+    }
+    token = token->next;
+    return true;
+}
+
 LVar *find_lvar(Token *tok) {
     for (LVar *var = locals; var; var = var->next) {
         if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
@@ -152,6 +160,12 @@ Token *tokenize(char *p) {
         if(strncmp(p, "if", 2) == 0 && !is_alnum(p[2])) {
             cur = new_token(TK_IF, cur, p, 2);
             p += 2;
+            continue;
+        }
+
+        if(strncmp(p, "else", 4) == 0 && !is_alnum(p[4])) {
+            cur = new_token(TK_ELSE, cur, p, 4);
+            p += 4;
             continue;
         }
 

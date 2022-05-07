@@ -42,6 +42,7 @@ typedef enum {
     TK_NUM,
     TK_RETURN,
     TK_IF,
+    TK_ELSE,
     TK_EOF,
 } TokenKind;
 
@@ -59,6 +60,7 @@ struct Token {
 Token *consume_ident();
 bool consume_return();
 bool consume_if();
+bool consume_else();
 
 
 //このグローバル変数に、入力をトークナイズした列を格納する
@@ -85,6 +87,8 @@ typedef enum {
     ND_ASSIGN, // =
     ND_RETURN,
     ND_IF,
+    ND_ELSE,
+    ND_IF_ELSE,
     ND_NUM,
 } NodeKind;
 
@@ -95,7 +99,7 @@ struct Node {
     NodeKind kind;
     Node *lhs;
     Node *rhs;
-    int val;
+    int val;    // kindがND_NUMの場合のみ
     int offset; // kindがND_LVARの場合のみ　ベースポインタからのオフセット
 };
 
@@ -130,3 +134,5 @@ void gen(Node *node);
 Node *code[100];
 
 int counter;
+
+#define dump() fprintf(stderr, "%d行目を実行しています\n", __LINE__)

@@ -19,7 +19,7 @@ Node *new_node_num(int val) {
 
 //次のEBNFで表されるトークン列をパースする
 //program    = stmt*
-//stmt       = expr ";" | "if" "(" expr ")" stmt | "return" expr ";"
+//stmt       = expr ";" | "if" "(" expr ")" stmt ("else" stmt)? | "return" expr ";"
 //expr       = assign
 //assign     = equality ("=" assign)?
 //equality   = relation ("==" relation | "!=" relation)*
@@ -45,8 +45,9 @@ void program() {
 //それぞれ、対応する種類のノードを根とする木を構築し、根へのポインタを返す
 Node *stmt() {
     Node *node;
+    node = calloc(1, sizeof(Node));
+
     if (consume_return()) {
-        node = calloc(1, sizeof(Node));
         node->kind = ND_RETURN;
         node->lhs = expr();
         if (at_eof()) {
@@ -56,12 +57,26 @@ Node *stmt() {
         //;は区切りの意味しかないので、expectで進める
         expect(";");
     } else if (consume_if()) {
-        node = calloc(1, sizeof(Node));
-        node->kind = ND_IF;
         expect("(");
-        node->lhs = expr();
+        Node *c1 = calloc(1, sizeof(Node));
+        c1 = expr();
         expect(")");
-        node->rhs = stmt();
+        Node *c2 = calloc(1, sizeof(Node));
+        c2 = stmt();
+
+        if (consume_else()) {
+            node->kind = ND_IF_ELSE;
+            Node *e = calloc(1, sizeof(Node));
+            e->kind = ND_ELSE;
+            e->lhs = c2;
+            e->rhs = stmt();
+            node->lhs = c1;
+            node->rhs = e;
+        } else {
+            node->kind = ND_IF;
+            node->lhs = c1;
+            node->rhs = c2;
+        }
     } else {
         node = expr();
         if (at_eof()) {

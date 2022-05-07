@@ -47,13 +47,13 @@ main:
   push rax
   pop rax
   cmp rax, 0
-  je  .Lend0
+  je  .L0
   push 3
   pop rax
   mov rsp, rbp
   pop rbp
   ret
-.Lend0:
+.L0:
   pop rax
   push 0
   pop rax
