@@ -35,7 +35,6 @@ struct LVar {
 LVar *locals;
 
 
-
 typedef enum {
     TK_RESERVED,
     TK_IDENT,
@@ -44,6 +43,7 @@ typedef enum {
     TK_IF,
     TK_ELSE,
     TK_WHILE,
+    TK_FOR,
     TK_EOF,
 } TokenKind;
 
@@ -59,10 +59,16 @@ struct Token {
 };
 
 Token *consume_ident();
+
 bool consume_return();
+
 bool consume_if();
+
 bool consume_else();
+
 bool consume_while();
+
+bool consume_for();
 
 
 //このグローバル変数に、入力をトークナイズした列を格納する
@@ -92,6 +98,8 @@ typedef enum {
     ND_ELSE,
     ND_IF_ELSE,
     ND_WHILE,
+    ND_FOR,
+    ND_BLANK, //左右の子を持つだけのノード 2分木を使ってN分木を作るために実装
     ND_NUM,
 } NodeKind;
 

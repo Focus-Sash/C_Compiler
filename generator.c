@@ -7,10 +7,11 @@
 void gen(Node *node) {
 
     switch (node->kind) {
-        case ND_NUM:
+        case ND_NUM: {
             printf("  push %d\n", node->val);
             return;
-        case ND_LVAR:
+        }
+        case ND_LVAR: {
             gen_lval(node);
             //この時点でスタックトップには変数のアドレスが入っている
             printf("  pop rax\n");
@@ -18,7 +19,8 @@ void gen(Node *node) {
             printf("  mov rax, [rax]\n");
             printf("  push rax\n");
             return;
-        case ND_ASSIGN:
+        }
+        case ND_ASSIGN: {
             //ノードの左の子(変数名)を左辺値として評価する
             //スタックトップにはraxの値(変数のアドレス)が入る
             gen_lval(node->lhs);
@@ -32,48 +34,82 @@ void gen(Node *node) {
             printf("  mov [rax], rdi\n");
             printf("  push rdi\n");
             return;
-        case ND_RETURN:
+        }
+        case ND_RETURN: {
             gen(node->lhs);
             printf("  pop rax\n");
             printf("  mov rsp, rbp\n");
             printf("  pop rbp\n");
             printf("  ret\n");
             return;
-        case ND_IF:
+        }
+        case ND_IF: {
             gen(node->lhs);
             printf("  pop rax\n");
             printf("  cmp rax, 0\n");
-            printf("  je  .L%d\n", counter);
-            gen(node->rhs);
-            printf(".L%d:\n", counter);
+            int tmp_if = counter;
             counter++;
+            printf("  je  .L%d\n", tmp_if);
+            gen(node->rhs);
+            printf(".L%d:\n", tmp_if);
             return;
-        case ND_IF_ELSE:
+        }
+        case ND_IF_ELSE: {
+            // if (A) B else C
+            // Aをコンパイル
             gen(node->lhs);
             printf("  pop rax\n");
             printf("  cmp rax, 0\n");
-            printf("  je  .Lelse%d\n", counter);
-            gen(node->rhs);
-            printf(".Lend%d:\n", counter + 1);
+            int tmp_ifelse = counter;
             counter += 2;
+            printf("  je  .L%d\n", tmp_ifelse);
+            // Bをコンパイル
+            gen(node->rhs->lhs);
+            printf("  jmp .L%d\n", tmp_ifelse + 1);
+            printf(".L%d:\n", tmp_ifelse);
+            gen(node->rhs->rhs);
+            printf(".L%d:\n", tmp_ifelse + 1);
             return;
-        case ND_ELSE:
-            gen(node->lhs);
-            printf("  jmp .Lend%d\n", counter + 1);
-            printf(".Lelse%d:\n", counter);
-            gen(node->rhs);
-            return;
-        case ND_WHILE:
-            printf(".Lbegin%d:\n", counter);
+        }
+        case ND_WHILE: {
+            // while(A) B
+            int tmp_while = counter;
+            counter += 2;
+            printf(".L%d:\n", tmp_while);
+            // Aをコンパイル
             gen(node->lhs);
             printf("  pop rax\n");
             printf("  cmp rax, 0\n");
-            printf("  je .Lend%d\n", counter + 1);
+            printf("  je .L%d\n", tmp_while + 1);
+            // Bをコンパイル
             gen(node->rhs);
-            printf("  jmp .Lbegin%d\n", counter);
-            printf(".Lend%d:\n", counter + 1);
-            counter += 2;
+            printf("  jmp .L%d\n", tmp_while);
+            printf(".L%d:\n", tmp_while + 1);
             return;
+        }
+        case ND_FOR: {
+            // for (A; B; C) D
+            int tmp_for = counter;
+            counter += 2;
+            // Aをコンパイル
+            gen(node->lhs);
+            printf(".L%d:\n", tmp_for);
+            // Bをコンパイル
+            gen(node->rhs->lhs);
+            printf("  pop rax\n");
+            printf("  cmp rax, 0\n");
+            printf("  je  .L%d\n", tmp_for + 1);
+            // Dをコンパイル
+            gen(node->rhs->rhs->lhs);
+            // Cをコンパイル
+            gen(node->rhs->rhs->rhs);
+            printf("  jmp .L%d\n", tmp_for);
+            printf(".L%d:\n", tmp_for + 1);
+            return;
+        }
+        case ND_BLANK:{
+            return;
+        }
     }
 
 

@@ -19,7 +19,10 @@ Node *new_node_num(int val) {
 
 //次のEBNFで表されるトークン列をパースする
 //program    = stmt*
-//stmt       = expr ";" | "if" "(" expr ")" stmt ("else" stmt)? | "return" expr ";"
+//stmt       = expr ";"
+//           | "if" "(" expr ")" stmt ("else" stmt)? | "return" expr ";"
+//           | "while" "( expr ") stmt
+//           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //expr       = assign
 //assign     = equality ("=" assign)?
 //equality   = relation ("==" relation | "!=" relation)*
@@ -77,12 +80,59 @@ Node *stmt() {
             node->lhs = c1;
             node->rhs = c2;
         }
-    } else if(consume_while()) {
+    } else if (consume_while()) {
         expect("(");
         node->kind = ND_WHILE;
         node->lhs = expr();
         expect(")");
         node->rhs = stmt();
+    } else if (consume_for()) {
+        expect("(");
+        node->kind = ND_FOR;
+
+        // for文の初期化
+        if (consume(";")) {
+            Node *l = calloc(1, sizeof(Node));
+            l->kind = ND_BLANK;
+            node->lhs = l;
+        } else {
+            Node *l = calloc(1, sizeof(Node));
+            l = expr();
+            expect(";");
+            node->lhs = l;
+        }
+
+
+        Node *r = calloc(1, sizeof(Node));
+        r->kind = ND_BLANK;
+
+        // for文の条件
+        if (consume(";")) {
+            Node *rl = calloc(1, sizeof(Node));
+            rl->kind = ND_BLANK;
+            r->lhs = rl;
+        } else {
+            Node *rl = expr();
+            r->lhs = rl;
+            expect(";");
+        }
+
+        Node *rr = calloc(1, sizeof(Node));
+        rr->kind = ND_BLANK;
+
+        // for文の更新式
+        if(consume(")")) {
+            Node *rrl = calloc(1, sizeof(Node));
+            rrl->kind = ND_BLANK;
+            rr->lhs = rrl;
+        } else {
+            rr->lhs = expr();
+            expect(")");
+        }
+
+        rr->rhs = stmt();
+        r->rhs = rr;
+        node->rhs = r;
     } else {
         node = expr();
         if (at_eof()) {
