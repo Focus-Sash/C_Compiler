@@ -43,6 +43,7 @@ typedef enum {
     TK_RETURN,
     TK_IF,
     TK_ELSE,
+    TK_WHILE,
     TK_EOF,
 } TokenKind;
 
@@ -61,6 +62,7 @@ Token *consume_ident();
 bool consume_return();
 bool consume_if();
 bool consume_else();
+bool consume_while();
 
 
 //このグローバル変数に、入力をトークナイズした列を格納する
@@ -89,6 +91,7 @@ typedef enum {
     ND_IF,
     ND_ELSE,
     ND_IF_ELSE,
+    ND_WHILE,
     ND_NUM,
 } NodeKind;
 

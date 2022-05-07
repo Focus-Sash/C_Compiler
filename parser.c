@@ -77,6 +77,12 @@ Node *stmt() {
             node->lhs = c1;
             node->rhs = c2;
         }
+    } else if(consume_while()) {
+        expect("(");
+        node->kind = ND_WHILE;
+        node->lhs = expr();
+        expect(")");
+        node->rhs = stmt();
     } else {
         node = expr();
         if (at_eof()) {

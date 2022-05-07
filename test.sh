@@ -17,6 +17,8 @@ assert() {
     fi
 }
 
+assert 5 "a=0;while(a<5)a=a+1;return a;"
+assert 0 "a=4;b=2;if(a*b!=8)return 3;else return 0;"
 assert 2 "if(0)return 3;return 2;"
 assert 3 "if(0)return 2;else return 3;"
 assert 3 "if(1)return 3;return 2;"
@@ -38,7 +40,6 @@ assert 3 "_x=3;_x;"
 assert 3 "_09090=3;_09090;"
 assert 3 "a=3;b=2;return 3;"
 assert 3 "a=4;return a-1;"
-assert 3 "a=4;b=2;if(a*b==8)return 3;return 0;"
 
 
 echo OK
