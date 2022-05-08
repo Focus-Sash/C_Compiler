@@ -95,26 +95,50 @@ typedef enum {
     ND_ASSIGN, // =
     ND_RETURN,
     ND_IF,
-    ND_ELSE,
-    ND_IF_ELSE,
     ND_WHILE,
     ND_FOR,
+    ND_BLOCK,
     ND_BLANK, //左右の子を持つだけのノード 2分木を使ってN分木を作るために実装
     ND_NUM,
 } NodeKind;
 
 typedef struct Node Node;
+typedef struct vector vector;
+typedef struct cell cell;
+
+struct cell {
+    Node *stmt;
+    cell *next;
+};
+
+struct vector {
+    cell *head;
+};
 
 //構文木のノードを表す構造体
 struct Node {
     NodeKind kind;
+
     Node *lhs;
     Node *rhs;
-    int val;    // kindがND_NUMの場合のみ
-    int offset; // kindがND_LVARの場合のみ　ベースポインタからのオフセット
+
+    Node *if_cond;  // kindがND_IFの場合のみ
+    Node *if_true;  // kindがND_IFの場合のみ
+    Node *if_false; // kindがND_IFの場合のみ
+
+    Node *for_init;   // kindがND_FORの場合のみ
+    Node *for_cond;   // kindがND_FORの場合のみ
+    Node *for_upd;    // kindがND_FORの場合のみ
+    Node *for_content;// kindがND_FORの場合のみ
+
+    vector stmt;  // kindがND_BLOCKの場合のみ
+    int val;      // kindがND_NUMの場合のみ
+    int offset;   // kindがND_LVARの場合のみ　ベースポインタからのオフセット
 };
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
+
+Node *blank_node();
 
 Node *new_node_num(int val);
 
@@ -146,4 +170,4 @@ Node *code[100];
 
 int counter;
 
-#define dump() fprintf(stderr, "%d行目を実行しています\n", __LINE__)
+#define dump() fprintf(stderr, "%sの%d行目を実行しています\n", __FILE__, __LINE__)

@@ -16,10 +16,17 @@ Node *new_node_num(int val) {
     return node;
 }
 
+Node *blank_node() {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_BLANK;
+    return node;
+}
+
 
 //次のEBNFで表されるトークン列をパースする
 //program    = stmt*
 //stmt       = expr ";"
+//           | "{" stmt* "}"
 //           | "if" "(" expr ")" stmt ("else" stmt)? | "return" expr ";"
 //           | "while" "( expr ") stmt
 //           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
@@ -60,26 +67,41 @@ Node *stmt() {
         //;は区切りの意味しかないので、expectで進める
         expect(";");
     } else if (consume_if()) {
+          dump();
+//        expect("(");
+//        Node *c1 = calloc(1, sizeof(Node));
+//        c1 = expr();
+//        expect(")");
+//        Node *c2 = calloc(1, sizeof(Node));
+//        c2 = stmt();
+//
+//        if (consume_else()) {
+//            node->kind = ND_IF_ELSE;
+//            node->ifelse_cond = c1;
+//            node->ifelse_true = c2;
+//            node->ifelse_false =
+//            Node *e = calloc(1, sizeof(Node));
+//            e->kind = ND_ELSE;
+//            e->lhs = c2;
+//            e->rhs = stmt();
+//            node->lhs = c1;
+//            node->rhs = e;
+//        } else {
+//            node->kind = ND_IF;
+//            node->lhs = c1;
+//            node->rhs = c2;
+//        }
+        dump();
+        node->kind = ND_IF;
         expect("(");
-        Node *c1 = calloc(1, sizeof(Node));
-        c1 = expr();
+        dump();
+        node->if_cond = expr();
         expect(")");
-        Node *c2 = calloc(1, sizeof(Node));
-        c2 = stmt();
-
-        if (consume_else()) {
-            node->kind = ND_IF_ELSE;
-            Node *e = calloc(1, sizeof(Node));
-            e->kind = ND_ELSE;
-            e->lhs = c2;
-            e->rhs = stmt();
-            node->lhs = c1;
-            node->rhs = e;
-        } else {
-            node->kind = ND_IF;
-            node->lhs = c1;
-            node->rhs = c2;
-        }
+        dump();
+        node->if_true = stmt();
+        dump();
+        node->if_false = consume_else() ? stmt() : blank_node();
+        dump();
     } else if (consume_while()) {
         expect("(");
         node->kind = ND_WHILE;
@@ -92,47 +114,29 @@ Node *stmt() {
 
         // for文の初期化
         if (consume(";")) {
-            Node *l = calloc(1, sizeof(Node));
-            l->kind = ND_BLANK;
-            node->lhs = l;
+            node->for_init = blank_node();
         } else {
-            Node *l = calloc(1, sizeof(Node));
-            l = expr();
+            node->for_init = expr();
             expect(";");
-            node->lhs = l;
         }
-
-
-        Node *r = calloc(1, sizeof(Node));
-        r->kind = ND_BLANK;
 
         // for文の条件
         if (consume(";")) {
-            Node *rl = calloc(1, sizeof(Node));
-            rl->kind = ND_BLANK;
-            r->lhs = rl;
+            node->for_cond = blank_node();
         } else {
-            Node *rl = expr();
-            r->lhs = rl;
+            node->for_cond = expr();
             expect(";");
         }
 
-        Node *rr = calloc(1, sizeof(Node));
-        rr->kind = ND_BLANK;
-
         // for文の更新式
         if(consume(")")) {
-            Node *rrl = calloc(1, sizeof(Node));
-            rrl->kind = ND_BLANK;
-            rr->lhs = rrl;
+            node->for_upd = blank_node();
         } else {
-            rr->lhs = expr();
+            node->for_upd = expr();
             expect(")");
         }
 
-        rr->rhs = stmt();
-        r->rhs = rr;
-        node->rhs = r;
+        node->for_content = stmt();
     } else {
         node = expr();
         if (at_eof()) {
@@ -227,7 +231,6 @@ Node *unary() {
 }
 
 
-//終端記号として変数名が加わった
 Node *primary() {
     if (consume("(")) {
         Node *node = expr();

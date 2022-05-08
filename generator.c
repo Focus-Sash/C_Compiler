@@ -43,32 +43,22 @@ void gen(Node *node) {
             printf("  ret\n");
             return;
         }
+
         case ND_IF: {
-            gen(node->lhs);
+            // if (A) B else C
+            // Aをコンパイル
+            gen(node->if_cond);
             printf("  pop rax\n");
             printf("  cmp rax, 0\n");
             int tmp_if = counter;
-            counter++;
-            printf("  je  .L%d\n", tmp_if);
-            gen(node->rhs);
-            printf(".L%d:\n", tmp_if);
-            return;
-        }
-        case ND_IF_ELSE: {
-            // if (A) B else C
-            // Aをコンパイル
-            gen(node->lhs);
-            printf("  pop rax\n");
-            printf("  cmp rax, 0\n");
-            int tmp_ifelse = counter;
             counter += 2;
-            printf("  je  .L%d\n", tmp_ifelse);
+            printf("  je  .L%d\n", tmp_if);
             // Bをコンパイル
-            gen(node->rhs->lhs);
-            printf("  jmp .L%d\n", tmp_ifelse + 1);
-            printf(".L%d:\n", tmp_ifelse);
-            gen(node->rhs->rhs);
-            printf(".L%d:\n", tmp_ifelse + 1);
+            gen(node->if_true);
+            printf("  jmp .L%d\n", tmp_if + 1);
+            printf(".L%d:\n", tmp_if);
+            gen(node->if_false);
+            printf(".L%d:\n", tmp_if + 1);
             return;
         }
         case ND_WHILE: {
@@ -92,20 +82,23 @@ void gen(Node *node) {
             int tmp_for = counter;
             counter += 2;
             // Aをコンパイル
-            gen(node->lhs);
+            gen(node->for_init);
             printf(".L%d:\n", tmp_for);
             // Bをコンパイル
-            gen(node->rhs->lhs);
+            gen(node->for_cond);
             printf("  pop rax\n");
             printf("  cmp rax, 0\n");
             printf("  je  .L%d\n", tmp_for + 1);
             // Dをコンパイル
-            gen(node->rhs->rhs->lhs);
+            gen(node->for_content);
             // Cをコンパイル
-            gen(node->rhs->rhs->rhs);
+            gen(node->for_upd);
             printf("  jmp .L%d\n", tmp_for);
             printf(".L%d:\n", tmp_for + 1);
             return;
+        }
+        case ND_BLOCK:{
+
         }
         case ND_BLANK:{
             return;
