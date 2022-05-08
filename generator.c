@@ -1,11 +1,33 @@
 #include "compiler.h"
 
+char *node_name2[17] = {
+        "ND_ADD",
+        "ND_SUB",
+        "ND_MUL",
+        "ND_DIV",
+        "ND_EQ",
+        "ND_NE",
+        "ND_LT",
+        "ND_LE",
+        "ND_LVAR", // ローカル変数
+        "ND_ASSIGN", // =
+        "ND_RETURN",
+        "ND_IF",
+        "ND_WHILE",
+        "ND_FOR",
+        "ND_BLOCK",
+        "ND_BLANK", //左右の子を持つだけのノード 2分木を使ってN分木を作るために実装
+        "ND_NUM",
+};
 
+void dump_node_type(Node *node) {
+    fprintf(stderr, "%s\n", node_name2[node->kind]);
+    return;
+}
 
 //ノードを右辺値として評価する
 //tokenを読みながら構文木を構築し、nodeの左右の子の値をスタックにpushし、nodeを根とする部分木の値を計算し、raxに格納するアセンブラを出力する
 void gen(Node *node) {
-
     switch (node->kind) {
         case ND_NUM: {
             printf("  push %d\n", node->val);
@@ -45,6 +67,7 @@ void gen(Node *node) {
         }
 
         case ND_IF: {
+            dump_node_type(node);
             // if (A) B else C
             // Aをコンパイル
             gen(node->if_cond);
@@ -98,7 +121,14 @@ void gen(Node *node) {
             return;
         }
         case ND_BLOCK:{
-
+            cell *cur = node->compound.head;
+            while(cur != NULL){
+                fprintf(stderr, "%s\n", node_name2[cur->stmt->kind]);
+                gen(cur->stmt);
+                cur = cur->next;
+                printf("  pop rax\n");
+            }
+            return;
         }
         case ND_BLANK:{
             return;

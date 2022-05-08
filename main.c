@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
     // codeにNodeの列を保存する
     program();
 
+    fprintf(stderr, "\nTokens successfully parsed.\n\nGenerating code.\n\n");
 
     //アセンブリの前半部分
     printf(".intel_syntax noprefix\n");

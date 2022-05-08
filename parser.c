@@ -1,5 +1,111 @@
 #include "compiler.h"
 
+void parse_log() {
+    fprintf(stderr, "  Consuming token #%d of type %s.\n", token->id, token_name[token->kind]);
+    return;
+}
+
+//特定の文字列が先頭に来ているとき、ポインタを進める
+bool consume(char *op) {
+    //int memcmp(void *p, void *q, int n)はp, qの最初のn文字を比較する
+    //p > qのとき正、p = qのとき0、p < qのとき負になる
+    if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)) {
+        return false;
+    }
+    parse_log();
+    token = token->next;
+    return true;
+}
+
+//変数名が先頭に来ているとき、ポインタを進める
+//あとで変数名を2文字以上にするために、文字数のチェックは入れない
+//演算子などではそのトークンの情報は自明だったが、変数ではオフセットの情報が必要なので、変数名の情報が入ったトークンを返す
+//expect_numberと同様の実装になる
+Token *consume_ident() {
+    if (token->kind != TK_IDENT) {
+        return NULL;
+    }
+    Token *res = token;
+    parse_log();
+    token = token->next;
+    return res;
+}
+
+bool consume_return() {
+    if(token->kind != TK_RETURN) {
+        return false;
+    }
+    parse_log();
+    token = token->next;
+    return true;
+}
+
+bool consume_if() {
+    if(token->kind != TK_IF) {
+        return false;
+    }
+    parse_log();
+    token = token->next;
+    return true;
+}
+
+bool consume_else() {
+    if(token->kind != TK_ELSE) {
+        return false;
+    }
+    parse_log();
+    token = token->next;
+    return true;
+}
+
+bool consume_while() {
+    if(token->kind != TK_WHILE) {
+        return false;
+    }
+    parse_log();
+    token = token->next;
+    return true;
+}
+
+bool consume_for() {
+    if(token->kind != TK_FOR) {
+        return false;
+    }
+    parse_log();
+    token = token->next;
+    return true;
+}
+
+LVar *find_lvar(Token *tok) {
+    for (LVar *var = locals; var; var = var->next) {
+        if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+            return var;
+        }
+    }
+    return NULL;
+}
+
+//特定の文字列が先頭に来ているかチェックし、ポインタを進める
+void expect(char *op) {
+    if (token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)) {
+        error_at(token->str, "expected \"%s\"", op);
+    }
+    parse_log();
+    token = token->next;
+}
+
+//数字が先頭に来ているかチェックする
+int expect_number() {
+    if (token->kind != TK_NUM) {
+//        error_at(token->str, "数ではありません");
+        dump();
+        exit(1);
+    }
+    int val = token->val;
+    parse_log();
+    token = token->next;
+    return val;
+}
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
     Node *node = calloc(1, sizeof(Node));
@@ -21,6 +127,38 @@ Node *blank_node() {
     node->kind = ND_BLANK;
     return node;
 }
+
+char *token_name[9] = {
+    "TK_RESERVED",
+    "TK_IDENT",
+    "TK_NUM",
+    "TK_RETURN",
+    "TK_IF",
+    "TK_ELSE",
+    "TK_WHILE",
+    "TK_FOR",
+    "TK_EOF",
+};
+
+char *node_name[17] = {
+    "ND_ADD",
+    "ND_SUB",
+    "ND_MUL",
+    "ND_DIV",
+    "ND_EQ",
+    "ND_NE",
+    "ND_LT",
+    "ND_LE",
+    "ND_LVAR", // ローカル変数
+    "ND_ASSIGN", // =
+    "ND_RETURN",
+    "ND_IF",
+    "ND_WHILE",
+    "ND_FOR",
+    "ND_BLOCK",
+    "ND_BLANK", //左右の子を持つだけのノード 2分木を使ってN分木を作るために実装
+    "ND_NUM",
+};
 
 
 //次のEBNFで表されるトークン列をパースする
@@ -54,8 +192,10 @@ void program() {
 
 //それぞれ、対応する種類のノードを根とする木を構築し、根へのポインタを返す
 Node *stmt() {
+    fprintf(stderr, "Reading stmt.\n");
     Node *node;
     node = calloc(1, sizeof(Node));
+
 
     if (consume_return()) {
         node->kind = ND_RETURN;
@@ -67,47 +207,22 @@ Node *stmt() {
         //;は区切りの意味しかないので、expectで進める
         expect(";");
     } else if (consume_if()) {
-          dump();
-//        expect("(");
-//        Node *c1 = calloc(1, sizeof(Node));
-//        c1 = expr();
-//        expect(")");
-//        Node *c2 = calloc(1, sizeof(Node));
-//        c2 = stmt();
-//
-//        if (consume_else()) {
-//            node->kind = ND_IF_ELSE;
-//            node->ifelse_cond = c1;
-//            node->ifelse_true = c2;
-//            node->ifelse_false =
-//            Node *e = calloc(1, sizeof(Node));
-//            e->kind = ND_ELSE;
-//            e->lhs = c2;
-//            e->rhs = stmt();
-//            node->lhs = c1;
-//            node->rhs = e;
-//        } else {
-//            node->kind = ND_IF;
-//            node->lhs = c1;
-//            node->rhs = c2;
-//        }
-        dump();
+
         node->kind = ND_IF;
         expect("(");
-        dump();
         node->if_cond = expr();
         expect(")");
-        dump();
         node->if_true = stmt();
-        dump();
         node->if_false = consume_else() ? stmt() : blank_node();
-        dump();
+
     } else if (consume_while()) {
+
         expect("(");
         node->kind = ND_WHILE;
         node->lhs = expr();
         expect(")");
         node->rhs = stmt();
+
     } else if (consume_for()) {
         expect("(");
         node->kind = ND_FOR;
@@ -129,7 +244,7 @@ Node *stmt() {
         }
 
         // for文の更新式
-        if(consume(")")) {
+        if (consume(")")) {
             node->for_upd = blank_node();
         } else {
             node->for_upd = expr();
@@ -137,6 +252,37 @@ Node *stmt() {
         }
 
         node->for_content = stmt();
+    } else if(consume("{")) {
+        int tmp = 0;
+        node->kind = ND_BLOCK;
+        vector v;
+        v.head = NULL;
+        v.tail = NULL;
+
+        while(!consume("}")) {
+            tmp++;
+            cell *s = calloc(1, sizeof(cell));
+            s->next = NULL;
+            s->stmt = stmt();
+
+
+            if(v.head == NULL) {
+                v.head = s;
+                v.tail = s;
+            } else {
+                v.tail->next = s;
+                v.tail = s;
+            }
+
+            if(tmp == 10) {
+                fprintf(stderr, "複文が閉じていません\n");
+                exit(1);
+            }
+        }
+
+        node->compound = v;
+
+
     } else {
         node = expr();
         if (at_eof()) {
@@ -147,14 +293,17 @@ Node *stmt() {
         expect(";");
     }
 
+    fprintf(stderr, "Created node of type %s.\n", node_name[node->kind]);
     return node;
 }
 
 Node *expr() {
+    fprintf(stderr, "Reading expr.\n");
     return assign();
 }
 
 Node *assign() {
+    fprintf(stderr, "Reading assign.\n");
     Node *node = equality();
     if (consume("=")) {
         node = new_node(ND_ASSIGN, node, assign());
@@ -164,6 +313,7 @@ Node *assign() {
 }
 
 Node *equality() {
+    fprintf(stderr, "Reading equality.\n");
     Node *node = relation();
     for (;;) {
         if (consume("==")) {
@@ -177,6 +327,7 @@ Node *equality() {
 }
 
 Node *relation() {
+    fprintf(stderr, "Reading relation.\n");
     Node *node = add();
     for (;;) {
         if (consume("<")) {
@@ -194,6 +345,7 @@ Node *relation() {
 }
 
 Node *add() {
+    fprintf(stderr, "Reading add.\n");
     Node *node = mul();
     for (;;) {
         if (consume("+")) {
@@ -208,6 +360,7 @@ Node *add() {
 
 
 Node *mul() {
+    fprintf(stderr, "Reading mul.\n");
     Node *node = unary();
     for (;;) {
         if (consume("*")) {
@@ -221,6 +374,7 @@ Node *mul() {
 }
 
 Node *unary() {
+    fprintf(stderr, "Reading unary.\n");
     if (consume("+")) {
         return primary();
     } else if (consume("-")) {
@@ -232,6 +386,7 @@ Node *unary() {
 
 
 Node *primary() {
+    fprintf(stderr, "Reading primary.\n");
     if (consume("(")) {
         Node *node = expr();
         expect(")");

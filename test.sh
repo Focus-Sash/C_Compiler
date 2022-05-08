@@ -17,6 +17,7 @@ assert() {
     fi
 }
 
+assert 3 "if(0){return 2;}else {return 3;}"
 assert 3 "if(0)return 2;else return 3;"
 assert 41 "a=0;for(b=0;b<5;b=b+1)if(b==2)a=a+1;else for(c=0;c<5;c=c+1)a=a+2;a;"
 assert 9 "a=0;for(b=0;b<5;b=b+1)if(b==2)a=a+1;else a=a+2;a;"

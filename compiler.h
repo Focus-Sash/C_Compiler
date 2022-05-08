@@ -47,6 +47,8 @@ typedef enum {
     TK_EOF,
 } TokenKind;
 
+char *token_name[9];
+
 typedef struct Token Token;
 
 struct Token {
@@ -55,7 +57,7 @@ struct Token {
     int val;
     char *str;
     int len;
-    //EOFの場合は0
+    int id; //何番目のトークンか
 };
 
 Token *consume_ident();
@@ -73,6 +75,8 @@ bool consume_for();
 
 //このグローバル変数に、入力をトークナイズした列を格納する
 Token *token;
+int token_count;
+int parse_count;
 
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 
@@ -113,6 +117,7 @@ struct cell {
 
 struct vector {
     cell *head;
+    cell *tail;
 };
 
 //構文木のノードを表す構造体
@@ -131,7 +136,7 @@ struct Node {
     Node *for_upd;    // kindがND_FORの場合のみ
     Node *for_content;// kindがND_FORの場合のみ
 
-    vector stmt;  // kindがND_BLOCKの場合のみ
+    vector compound;  // kindがND_BLOCKの場合のみ
     int val;      // kindがND_NUMの場合のみ
     int offset;   // kindがND_LVARの場合のみ　ベースポインタからのオフセット
 };
