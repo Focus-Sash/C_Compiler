@@ -1,16 +1,13 @@
-#include "compiler.h"
+#include "header.h"
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        error("引数の個数が正しくありません");
-        return 1;
-    }
+int main(int argc, char **argv) {
 
-    char *user_input = argv[1];
+    char *user_input = read_file(argv[1]);
+
+    fprintf(stderr, "%s\n", user_input);
 
     //グローバル変数tokenに、入力された文字列の最初の文字へのポインタを与える
-    token = tokenize(argv[1]);
-
+    token = tokenize(user_input);
 
     // codeにNodeの列を保存する
     program();

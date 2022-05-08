@@ -5,7 +5,7 @@ OBJS=$(SRCS: .c=.o)
 mycompiler:
 	gcc -o compiler $(OBJS) $(CFLAGS)
 
-$(OBJS): compiler.h
+$(OBJS): header.h
 
 test: compiler
 		./test.sh

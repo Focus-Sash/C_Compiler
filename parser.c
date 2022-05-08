@@ -1,4 +1,4 @@
-#include "compiler.h"
+#include "header.h"
 
 void parse_log() {
     fprintf(stderr, "  Consuming token #%d of type %s.\n", token->id, token_name[token->kind]);

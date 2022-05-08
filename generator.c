@@ -1,4 +1,4 @@
-#include "compiler.h"
+#include "header.h"
 
 char *node_name2[17] = {
         "ND_ADD",
@@ -67,7 +67,6 @@ void gen(Node *node) {
         }
 
         case ND_IF: {
-            dump_node_type(node);
             // if (A) B else C
             // Aをコンパイル
             gen(node->if_cond);
@@ -123,7 +122,6 @@ void gen(Node *node) {
         case ND_BLOCK:{
             cell *cur = node->compound.head;
             while(cur != NULL){
-                fprintf(stderr, "%s\n", node_name2[cur->stmt->kind]);
                 gen(cur->stmt);
                 cur = cur->next;
                 printf("  pop rax\n");
